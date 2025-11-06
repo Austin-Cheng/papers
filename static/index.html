@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学术论文展示系统</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>学术论文展示系统</h1>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索论文标题、作者或摘要...">
+            </div>
+            <div class="filters">
+                <select id="categoryFilter">
+                    <option value="">所有分类</option>
+                    <option value="cs.AI">人工智能 (cs.AI)</option>
+                    <option value="cs.CV">计算机视觉 (cs.CV)</option>
+                    <option value="cs.CL">计算语言学 (cs.CL)</option>
+                    <option value="cs.GR">计算机图形学 (cs.GR)</option>
+                    <option value="cs.HC">人机交互 (cs.HC)</option>
+                </select>
+                <select id="dateFilter">
+                    <option value="">所有时间</option>
+                    <option value="7">最近7天</option>
+                    <option value="30">最近30天</option>
+                    <option value="90">最近3个月</option>
+                </select>
+            </div>
+            <div class="paper-count">共 <span id="paperCount">0</span> 篇论文</div>
+        </div>
+
+        <div id="papersContainer">
+            <div class="loading">正在加载论文数据...</div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
