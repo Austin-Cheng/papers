@@ -7,6 +7,8 @@ import uuid
 from typing import List, Dict, Any, Optional
 from sqlalchemy import create_engine, text
 import pandas as pd
+import numpy as np
+import math
 
 
 class Paper:
@@ -213,7 +215,7 @@ class PaperStorage:
 
             # 建立父子关系
             for tag in tags_dict.values():
-                if tag.parent_id is None:
+                if tag.parent_id is None or tag.parent_id is np.nan or math.isnan(tag.parent_id):
                     root_tags.append(tag)
                 else:
                     parent = tags_dict.get(tag.parent_id)

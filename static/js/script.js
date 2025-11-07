@@ -423,8 +423,7 @@ function updatePaperCardTags(paperId) {
         );
     }
 }
-// 删除论文标签
-// 修改 deletePaperTag 函数，添加前端界面的实时更新
+
 async function deletePaperTag(paperId, tagId, tagName, event) {
     // 阻止事件冒泡
     event.stopPropagation();
@@ -450,8 +449,8 @@ async function deletePaperTag(paperId, tagId, tagName, event) {
                     paperCustomTags[paperId] = paperCustomTags[paperId].filter(tag => tag.id !== tagId);
                 }
 
-                // 直接更新当前论文卡片的标签显示，而不需要刷新整个列表
-                updatePaperCardTags(paperId);
+                // 直接更新当前论文卡片的标签显示
+                updatePaperCardTagsDisplay(paperId);
 
                 alert(`成功删除标签: ${tagName}`);
             } else {
@@ -466,6 +465,69 @@ async function deletePaperTag(paperId, tagId, tagName, event) {
     }
 }
 
+// 更新指定论文卡片的标签显示
+function updatePaperCardTagsDisplay(paperId) {
+    // 找到对应的论文卡片
+    const paperCard = document.getElementById(`paper-${paperId}`);
+    if (!paperCard) return;
+
+    // 找到标签显示区域（paper-actions div）
+    const actionsDiv = paperCard.querySelector('.paper-actions');
+    if (!actionsDiv) return;
+
+    // 获取该论文的所有数据（模拟）
+    const customTagsForPaper = paperCustomTags[paperId] || [];
+
+    // 重新生成自定义标签HTML
+    let newTagsHTML = '';
+    if (customTagsForPaper.length > 0) {
+        const customTagsHTML = customTagsForPaper.map(tag => `
+            <span class="custom-tag-wrapper" style="display: inline-block; position: relative; margin: 2px 4px;">
+                <span class="custom-tag" style="
+                    display: inline-block;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 4px 12px 4px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: 500;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                    position: relative;
+                " onclick="toggleTagDeleteButton(this, '${escapeHtml(paperId)}', ${tag.id})" 
+                   onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';" 
+                   onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
+                    ${escapeHtml(tag.name)}
+                </span>
+                <span class="delete-tag" style="
+                    display: none;
+                    position: absolute;
+                    top: -6px;
+                    right: -4px;
+                    background: #ff4757;
+                    color: white;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    font-size: 10px;
+                    text-align: center;
+                    line-height: 16px;
+                    cursor: pointer;
+                    font-weight: bold;
+                " onclick="deletePaperTag('${escapeHtml(paperId)}', ${tag.id}, '${escapeHtml(tag.name)}', event)">×</span>
+            </span>
+        `).join('');
+        newTagsHTML = customTagsHTML;
+    }
+
+    // 查找并更新标签容器中的自定义标签部分
+    const existingTags = actionsDiv.querySelectorAll('.custom-tag-wrapper');
+    existingTags.forEach(tag => tag.remove());
+
+    // 添加新的标签HTML到actionsDiv末尾
+    actionsDiv.insertAdjacentHTML('beforeend', newTagsHTML);
+}
 
 function formatCategoriesWithCustom(paper) {
     let categoriesHTML = formatCategories(paper.categories);
