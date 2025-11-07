@@ -39,4 +39,4 @@ if __name__ == "__main__":
     os.system("python -m http.server 8000 --directory static")
 
     # 自动打开浏览器
-    webbrowser.open("http://localhost:8000")
+    webbrowser.open("http://192.168.31.144:8000")

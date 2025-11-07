@@ -44,7 +44,6 @@ class PaperStorage:
             'user': 'root',
             'password': 'root123'
         }
-        self._initialize_sample_data()
 
     def _initialize_sample_data(self):
         connection_string = f"mysql+pymysql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}/{self.db_config['database']}"
@@ -53,6 +52,7 @@ class PaperStorage:
         # 从数据库读取数据
         query = "SELECT id, title, authors, summary_ch, categories, published FROM papers"
         df = pd.read_sql(query, engine)
+        self.papers = []
         for row in df.to_dict(orient="records"):
             sample_paper = Paper(
                 title=row["title"],
@@ -63,10 +63,12 @@ class PaperStorage:
                 paper_url=row['id']
             )
             self.papers.append(sample_paper)
+        return self.papers
 
     def get_all_papers(self, sort_by_date: bool = True) -> List[Paper]:
         """获取所有论文"""
-        papers = self.papers.copy()
+        papers = self._initialize_sample_data()
+        # papers = self.papers.copy()
         if sort_by_date:
             papers.sort(key=lambda x: x.published, reverse=True)
         return papers
@@ -257,12 +259,12 @@ class PaperStorage:
             engine = create_engine(connection_string)
 
             # 查询论文的标签
-            query = """
+            query = text("""
                 SELECT t.id, t.name 
                 FROM paper_tags pt 
                 JOIN tags t ON pt.tag_id = t.id 
                 WHERE pt.paper_id = :paper_id
-            """
+            """)
             df = pd.read_sql(query, engine, params={"paper_id": paper_id})
 
             # 转换为字典格式
@@ -278,6 +280,24 @@ class PaperStorage:
         except Exception as e:
             print(f"获取论文标签失败: {e}")
             return []
+
+    def remove_paper_tag(self, paper_id, tag_id):
+        """为论文删除标签"""
+        try:
+            connection_string = f"mysql+pymysql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}/{self.db_config['database']}"
+            engine = create_engine(connection_string)
+
+            # 删除标签关联记录
+            with engine.connect() as connection:
+                query = text("DELETE FROM paper_tags WHERE paper_id = :paper_id AND tag_id = :tag_id")
+                result = connection.execute(query, {"paper_id": paper_id, "tag_id": tag_id})
+                connection.commit()
+
+            return True
+
+        except Exception as e:
+            print(f"为论文删除标签失败: {e}")
+            return False
 
 
 class Tag:
@@ -638,31 +658,31 @@ class TagsHandler(BaseHandler):
     async def get(self):
         """获取自定义标签体系"""
         try:
-            # tags = self.storage.get_custom_tags()
-            tags = [
-                {
-                    "id": 1,
-                    "name": "计算机科学",
-                    "children": [
-                        {
-                            "id": 2,
-                            "name": "人工智能",
-                            "children": [
-                                {
-                                    "id": 3,
-                                    "name": "机器学习",
-                                    "children": []
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "id": 4,
-                    "name": "数学",
-                    "children": []
-                }
-            ]
+            tags = self.storage.get_custom_tags()
+            # tags = [
+            #     {
+            #         "id": 1,
+            #         "name": "计算机科学",
+            #         "children": [
+            #             {
+            #                 "id": 2,
+            #                 "name": "人工智能",
+            #                 "children": [
+            #                     {
+            #                         "id": 3,
+            #                         "name": "机器学习",
+            #                         "children": []
+            #                     }
+            #                 ]
+            #             }
+            #         ]
+            #     },
+            #     {
+            #         "id": 4,
+            #         "name": "数学",
+            #         "children": []
+            #     }
+            # ]
             self.write({
                 "success": True,
                 "data": tags
@@ -725,6 +745,56 @@ class PaperTagHandler(BaseHandler):
             })
 
 
+# 添加删除标签的处理器类
+class DeletePaperTagHandler(BaseHandler):
+    """删除论文标签接口"""
+
+    def initialize(self, storage: PaperStorage):
+        self.storage = storage
+
+    async def post(self):
+        """为论文删除标签"""
+        try:
+            data = tornado.escape.json_decode(self.request.body)
+            tag_id = data.get("tag_id")
+            paper_id = data.get("paper_id")
+
+            if not tag_id:
+                self.set_status(400)
+                self.write({
+                    "success": False,
+                    "error": "缺少必要的参数: tag_id"
+                })
+                return
+
+            success = self.storage.remove_paper_tag(paper_id, tag_id)
+
+            if success:
+                self.write({
+                    "success": True,
+                    "message": "标签删除成功"
+                })
+            else:
+                self.set_status(500)
+                self.write({
+                    "success": False,
+                    "error": "标签删除失败"
+                })
+
+        except json.JSONDecodeError:
+            self.set_status(400)
+            self.write({
+                "success": False,
+                "error": "无效的JSON数据"
+            })
+        except Exception as e:
+            self.set_status(500)
+            self.write({
+                "success": False,
+                "error": str(e)
+            })
+
+
 def make_app():
     """创建Tornado应用"""
     storage = PaperStorage()
@@ -740,6 +810,7 @@ def make_app():
         (r"/api/tags", TagsHandler, {"storage": storage}),  # 自定义标签接口
         (r"/api/tags/save", PaperTagHandler, {"storage": storage}),
         (r"/api/tags/load", PaperTagsHandler, {"storage": storage}),
+        (r"/api/tags/delete", DeletePaperTagHandler, {"storage": storage}),
     ])
 
 
