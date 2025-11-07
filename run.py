@@ -28,9 +28,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # 启动Tornado服务器（后台线程）
-    tornado_thread = Thread(target=start_tornado)
-    tornado_thread.daemon = True
-    tornado_thread.start()
+    # tornado_thread = Thread(target=start_tornado)
+    # tornado_thread.daemon = True
+    # tornado_thread.start()
 
     # 等待Tornado启动
     time.sleep(2)

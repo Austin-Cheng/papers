@@ -94,13 +94,26 @@ function renderPapers(papers) {
                 <button class="btn-favorite ${isFavorite ? 'active' : ''}" onclick="toggleFavoriteStatus('${escapeHtml(paper.paper_url || '')}', this)" title="添加到收藏">
                     ♡
                 </button>
-                ${formatCategories(paper.categories)}                    </div>
+                <button class="btn btn-outline" onclick="showCustomTagsSelector('${escapeHtml(paper.paper_url || '')}')" title="添加自定义标签">
+                  标签
+                </button>
+                ${formatCategoriesWithCustom(paper)}                    </div>
         </div>
     `}).join('');
 
     container.innerHTML = papersHTML;
 }
 
+// 在页面加载时预加载所有论文的自定义标签
+async function preloadPaperTags(papers) {
+    // 为提高性能，可以只加载前几篇论文的标签
+    const promises = papers.slice(0, 10).map(async paper => {
+        const tags = await loadPaperCustomTags(paper.paper_url);
+        paperCustomTags[paper.paper_url] = tags;
+    });
+
+    await Promise.all(promises);
+}
 
 // 向服务器发送收藏状态
 async function saveFavoriteStatusToServer(paperId, isFavorite) {
@@ -257,7 +270,206 @@ async function toggleFavoriteStatus(paperId, buttonElement) {
     }
 }
 
-// ... 其他函数保持不变 ...
+// 添加自定义标签相关变量
+let customTags = []; // 存储从数据库加载的自定义标签
+
+// 从服务器获取自定义标签体系
+async function loadCustomTags() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/tags`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                customTags = data.data || [];
+            }
+        }
+    } catch (error) {
+        console.error('加载自定义标签失败:', error);
+    }
+}
+
+// 添加全局变量存储论文的自定义标签
+let paperCustomTags = {}; // {paperId: [tagIds]}
+
+// 从服务器获取论文的自定义标签
+async function loadPaperCustomTags(paperId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/tags/load?paper_id=${paperId}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                return data.data || [];
+            }
+        }
+    } catch (error) {
+        console.error('加载论文自定义标签失败:', error);
+    }
+    return [];
+}
+
+// 修改 renderPapers 函数，在格式化分类标签部分添加自定义标签显示
+function formatCategoriesWithCustom(paper) {
+    let categoriesHTML = formatCategories(paper.categories);
+
+    // 获取该论文的自定义标签
+    const customTagsForPaper = paperCustomTags[paper.paper_url] || [];
+
+    // 添加自定义标签显示
+    if (customTagsForPaper.length > 0) {
+        const customTagsHTML = customTagsForPaper.map(tag =>
+            `<span class="custom-tag">${tag.name}</span>`
+        ).join('');
+        categoriesHTML += customTagsHTML;
+    }
+
+    return categoriesHTML;
+}
+
+// 渲染自定义标签树形结构
+function renderCustomTagsTree(tags, container, level = 0) {
+    const ul = document.createElement('ul');
+    ul.style.paddingLeft = `${level * 20}px`;
+
+    tags.forEach(tag => {
+        const li = document.createElement('li');
+        li.style.listStyle = 'none';
+        li.style.margin = '5px 0';
+
+        // 如果有子标签，显示为可展开的节点
+        if (tag.children && tag.children.length > 0) {
+            const expandBtn = document.createElement('span');
+            expandBtn.textContent = '▶ ';
+            expandBtn.style.cursor = 'pointer';
+            expandBtn.style.userSelect = 'none';
+            expandBtn.onclick = () => {
+                const childrenContainer = li.querySelector('.children');
+                if (childrenContainer.style.display === 'none') {
+                    childrenContainer.style.display = 'block';
+                    expandBtn.textContent = '▼ ';
+                } else {
+                    childrenContainer.style.display = 'none';
+                    expandBtn.textContent = '▶ ';
+                }
+            };
+            li.appendChild(expandBtn);
+        }
+
+        // 标签名称
+        const tagSpan = document.createElement('span');
+        tagSpan.textContent = tag.name;
+        tagSpan.style.cursor = 'pointer';
+        tagSpan.style.padding = '5px';
+        tagSpan.style.borderRadius = '3px';
+        tagSpan.onclick = () => applyCustomTag(tag.id, tag.name);
+        tagSpan.onmouseover = () => tagSpan.style.backgroundColor = '#e6f0ff';
+        tagSpan.onmouseout = () => tagSpan.style.backgroundColor = 'transparent';
+        li.appendChild(tagSpan);
+
+        // 子标签容器
+        if (tag.children && tag.children.length > 0) {
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'children';
+            childrenContainer.style.display = 'none';
+            childrenContainer.style.marginLeft = '20px';
+            renderCustomTagsTree(tag.children, childrenContainer, level + 1);
+            li.appendChild(childrenContainer);
+        }
+
+        ul.appendChild(li);
+    });
+
+    container.appendChild(ul);
+}
+
+async function showCustomTagsSelector(paperId) {
+    // 如果还没有加载标签数据，则先加载
+    if (customTags.length === 0) {
+        await loadCustomTags();
+    }
+
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.style.cssText = `        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    `;
+
+    modal.innerHTML = `        <div style="
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 500px;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+        ">
+            <h3 style="margin-top: 0; color: #333;">选择自定义标签</h3>
+            <div id="customTagsTree" style="margin-bottom: 20px;"></div>
+            <button class="btn btn-primary" onclick="this.closest('div').parentElement.remove()"
+                style="position: sticky; bottom: 0; background: #2575fc; color: white;">
+                关闭
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 渲染标签树
+    const treeContainer = modal.querySelector('#customTagsTree');
+    renderCustomTagsTree(customTags, treeContainer);
+
+    // 点击背景关闭模态框
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // 保存当前论文ID，供应用标签时使用
+    window.currentPaperId = paperId;
+}
+
+
+
+// 应用自定义标签到论文
+async function applyCustomTag(tagId, tagName) {
+    if (!window.currentPaperId) {
+        alert('未选择论文');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/tags/save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tag_id: tagId, paper_id: window.currentPaperId })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                alert(`成功为论文添加标签: ${tagName}`);
+                // 可以在这里更新UI，显示已应用的标签
+            } else {
+                alert('添加标签失败: ' + (result.error || '未知错误'));
+            }
+        } else {
+            alert('添加标签失败，请检查网络连接');
+        }
+    } catch (error) {
+        console.error('应用自定义标签失败:', error);
+        alert('添加标签失败: ' + error.message);
+    }
+}
 
 // 查看论文详情
 function viewPaper(paperUrl) {
@@ -344,6 +556,9 @@ async function filterPapers() {
         if (categoryFilter) params.category = categoryFilter;
 
         const papers = await fetchPapers(params);
+
+        // 预加载论文的自定义标签
+        await preloadPaperTags(papers);
 
         // 客户端日期筛选
         let filteredPapers = papers;

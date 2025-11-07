@@ -189,18 +189,115 @@ class PaperStorage:
             print(f"获取论文中文全文失败: {e}")
             return ""
 
+    # 在 PaperStorage 类中添加获取标签的方法
+    def get_custom_tags(self):
+        """获取自定义标签体系（倒置树形结构）"""
+        try:
+            connection_string = f"mysql+pymysql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}/{self.db_config['database']}"
+            engine = create_engine(connection_string)
+
+            # 查询所有标签
+            query = "SELECT id, name, parent_id FROM tags ORDER BY parent_id, id"
+            df = pd.read_sql(query, engine)
+
+            # 构建树形结构
+            tags_dict = {}
+            root_tags = []
+
+            # 创建标签对象
+            for _, row in df.iterrows():
+                tag = Tag(row['id'], row['name'], row['parent_id'])
+                tags_dict[tag.id] = tag
+
+            # 建立父子关系
+            for tag in tags_dict.values():
+                if tag.parent_id is None:
+                    root_tags.append(tag)
+                else:
+                    parent = tags_dict.get(tag.parent_id)
+                    if parent:
+                        parent.children.append(tag)
+
+            # 转换为字典格式
+            def tag_to_dict(tag):
+                return {
+                    "id": tag.id,
+                    "name": tag.name,
+                    "children": [tag_to_dict(child) for child in tag.children]
+                }
+
+            return [tag_to_dict(tag) for tag in root_tags]
+
+        except Exception as e:
+            print(f"获取自定义标签失败: {e}")
+            return []
+
+    def add_paper_tag(self, paper_id, tag_id):
+        """为论文添加标签"""
+        try:
+            connection_string = f"mysql+pymysql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}/{self.db_config['database']}"
+            engine = create_engine(connection_string)
+
+            # 插入标签关联记录
+            with engine.connect() as connection:
+                query = text("INSERT INTO paper_tags (paper_id, tag_id) VALUES (:paper_id, :tag_id)")
+                result = connection.execute(query, {"paper_id": paper_id, "tag_id": tag_id})
+                connection.commit()
+
+            return True
+
+        except Exception as e:
+            print(f"为论文添加标签失败: {e}")
+            return False
+
+    def get_paper_tags(self, paper_id):
+        """获取论文的自定义标签"""
+        try:
+            connection_string = f"mysql+pymysql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}/{self.db_config['database']}"
+            engine = create_engine(connection_string)
+
+            # 查询论文的标签
+            query = """
+                SELECT t.id, t.name 
+                FROM paper_tags pt 
+                JOIN tags t ON pt.tag_id = t.id 
+                WHERE pt.paper_id = :paper_id
+            """
+            df = pd.read_sql(query, engine, params={"paper_id": paper_id})
+
+            # 转换为字典格式
+            tags = []
+            for _, row in df.iterrows():
+                tags.append({
+                    "id": row['id'],
+                    "name": row['name']
+                })
+
+            return tags
+
+        except Exception as e:
+            print(f"获取论文标签失败: {e}")
+            return []
+
+
+class Tag:
+    def __init__(self, id, name, parent_id=None):
+        self.id = id
+        self.name = name
+        self.parent_id = parent_id
+        self.children = []
+
 
 class BaseHandler(tornado.web.RequestHandler):
     """基础处理器类"""
-
     def set_default_headers(self):
         """设置默认响应头"""
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Access-Control-Allow-Headers",
                         "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
-        self.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 
-    def options(self):
+    def options(self, *args):
         """处理OPTIONS请求（CORS预检）"""
         self.set_status(204)
         self.finish()
@@ -287,6 +384,32 @@ class PapersHandler(BaseHandler):
                 "success": False,
                 "error": "Invalid JSON data"
             })
+        except Exception as e:
+            self.set_status(500)
+            self.write({
+                "success": False,
+                "error": str(e)
+            })
+
+
+# 添加处理器
+class PaperTagsHandler(BaseHandler):
+    """论文标签接口"""
+
+    def initialize(self, storage: PaperStorage):
+        self.storage = storage
+
+    async def get(self):
+        """获取论文的自定义标签"""
+        try:
+            paper_id = self.get_argument("paper_id", None)
+            tags = self.storage.get_paper_tags(paper_id)
+
+            self.write({
+                "success": True,
+                "data": tags
+            })
+
         except Exception as e:
             self.set_status(500)
             self.write({
@@ -505,6 +628,103 @@ class ChineseFullTextHandler(BaseHandler):
             })
 
 
+# 添加标签处理器
+class TagsHandler(BaseHandler):
+    """自定义标签接口"""
+
+    def initialize(self, storage: PaperStorage):
+        self.storage = storage
+
+    async def get(self):
+        """获取自定义标签体系"""
+        try:
+            # tags = self.storage.get_custom_tags()
+            tags = [
+                {
+                    "id": 1,
+                    "name": "计算机科学",
+                    "children": [
+                        {
+                            "id": 2,
+                            "name": "人工智能",
+                            "children": [
+                                {
+                                    "id": 3,
+                                    "name": "机器学习",
+                                    "children": []
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "name": "数学",
+                    "children": []
+                }
+            ]
+            self.write({
+                "success": True,
+                "data": tags
+            })
+
+        except Exception as e:
+            self.set_status(500)
+            self.write({
+                "success": False,
+                "error": str(e)
+            })
+
+
+class PaperTagHandler(BaseHandler):
+    """论文标签接口"""
+
+    def initialize(self, storage: PaperStorage):
+        self.storage = storage
+
+    async def post(self):
+        """为论文添加标签"""
+        try:
+            data = tornado.escape.json_decode(self.request.body)
+            tag_id = data.get("tag_id")
+            paper_id = data.get("paper_id")
+
+            if not tag_id:
+                self.set_status(400)
+                self.write({
+                    "success": False,
+                    "error": "缺少必要的参数: tag_id"
+                })
+                return
+
+            success = self.storage.add_paper_tag(paper_id, tag_id)
+
+            if success:
+                self.write({
+                    "success": True,
+                    "message": "标签添加成功"
+                })
+            else:
+                self.set_status(500)
+                self.write({
+                    "success": False,
+                    "error": "标签添加失败"
+                })
+
+        except json.JSONDecodeError:
+            self.set_status(400)
+            self.write({
+                "success": False,
+                "error": "无效的JSON数据"
+            })
+        except Exception as e:
+            self.set_status(500)
+            self.write({
+                "success": False,
+                "error": str(e)
+            })
+
+
 def make_app():
     """创建Tornado应用"""
     storage = PaperStorage()
@@ -517,6 +737,9 @@ def make_app():
         (r"/api/status/read", PaperReadHandler, {"storage": storage}),
         (r"/api/status/favorite", PaperFavoriteHandler, {"storage": storage}),
         (r"/api/chinese_fulltext", ChineseFullTextHandler, {"storage": storage}),
+        (r"/api/tags", TagsHandler, {"storage": storage}),  # 自定义标签接口
+        (r"/api/tags/save", PaperTagHandler, {"storage": storage}),
+        (r"/api/tags/load", PaperTagsHandler, {"storage": storage}),
     ])
 
 
