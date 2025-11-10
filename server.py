@@ -15,13 +15,17 @@ class Paper:
     """论文数据模型"""
 
     def __init__(self, title: str, authors: List[str], summary: str, categories: List[str],
-                 published: Optional[str] = None, paper_url: Optional[str] = None):
+                 published: Optional[str] = None, paper_url: Optional[str] = None, is_read: Optional[int] = None,
+                 is_favorite: Optional[int] = None, custom_tags: Optional[list] = None):
         self.paper_url = paper_url
         self.title = title
         self.authors = authors
         self.summary = summary
         self.categories = categories
         self.published = published or datetime.datetime.now().isoformat()
+        self.is_read = is_read or False
+        self.is_favorite = is_favorite or False
+        self.custom_tags = custom_tags or []
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
@@ -31,7 +35,10 @@ class Paper:
             "authors": self.authors,
             "summary": self.summary,
             "categories": self.categories,
-            "published": self.published
+            "published": self.published,
+            "is_read": self.is_read,
+            "is_favorite": self.is_favorite,
+            "custom_tags": self.custom_tags
         }
 
 
@@ -52,7 +59,26 @@ class PaperStorage:
         engine = create_engine(connection_string)
 
         # 从数据库读取数据
-        query = "SELECT id, title, authors, summary_ch, categories, published FROM papers"
+        query = """
+        WITH paper_tags_agg AS (
+            SELECT pt.paper_id, JSON_ARRAYAGG(t.name) as tag_names
+            FROM paper_tags pt 
+            INNER JOIN tags t ON pt.tag_id = t.id
+            GROUP BY pt.paper_id
+        )
+        SELECT 
+            p.id, 
+            p.title, 
+            p.authors, 
+            p.summary_ch, 
+            p.categories, 
+            p.published, 
+            p.`read` as is_read, 
+            p.favorite as is_favorite,
+            pt.tag_names as custom_tags
+        FROM papers p
+        LEFT JOIN paper_tags_agg pt ON p.id = pt.paper_id;
+        """
         df = pd.read_sql(query, engine)
         self.papers = []
         for row in df.to_dict(orient="records"):
@@ -62,7 +88,10 @@ class PaperStorage:
                 summary=row['summary_ch'],
                 categories=json.loads(row['categories']),
                 published=row['published'].strftime('%Y-%m-%d %H:%M:%S'),
-                paper_url=row['id']
+                paper_url=row['id'],
+                is_read=row['is_read'],
+                is_favorite=row['is_favorite'],
+                custom_tags=json.loads(row['custom_tags']) if row['custom_tags'] else []
             )
             self.papers.append(sample_paper)
         return self.papers

@@ -22,8 +22,8 @@ function setLocalStorageData(key, data) {
 }
 
 // 初始化已读和收藏状态
-let readPapers = getLocalStorageData(READ_PAPERS_KEY);
-let favoritePapers = getLocalStorageData(FAVORITE_PAPERS_KEY);
+// let readPapers = getLocalStorageData(READ_PAPERS_KEY);
+// let favoritePapers = getLocalStorageData(FAVORITE_PAPERS_KEY);
 // API基础URL - 指向本地Tornado服务器
 const API_BASE_URL = 'http://localhost:8889/api';
 const PAPER_BASE_ADDR = 'file:///C:\\Users\\12390\\Documents\\projects\\papers\\papers'
@@ -58,28 +58,93 @@ async function fetchPapers(params = {}) {
     }
 }
 
-// 渲染论文列表
+// 修改 renderPapers 函数实现虚拟滚动
+// function renderPapers(papers) {
+//     const container = document.getElementById('papersContainer');
+//     const countElement = document.getElementById('paperCount');
+//
+//     if (papers.length === 0) {
+//         container.innerHTML = `<div class="empty-state">
+//                 <h3>未找到匹配的论文</h3>
+//                 <p>请尝试调整搜索条件或筛选器</p>
+//             </div>`;
+//         countElement.textContent = '0';
+//         return;
+//     }
+//
+//     countElement.textContent = papers.length;
+//
+//     // 只渲染前50个元素，提高初始加载速度
+//     const visiblePapers = papers.slice(0, 4);
+//     const papersHTML = visiblePapers.map(paper => {
+//         const isRead = paper.is_read || false;
+//         const isFavorite = paper.is_favorite || false;
+//         paperCustomTags[paper.paper_url] = paper.custom_tags || [];
+//
+//         return `<div class="paper-card ${isRead ? 'read' : ''} ${isFavorite ? 'favorite' : ''}" id="paper-${escapeHtml(paper.paper_url || '')}">
+//             <div class="paper-header">
+//                 <h2 class="paper-title">${escapeHtml(paper.title || '无标题')}</h2>
+//                 <div class="paper-date">${formatDate(paper.published)}</div>
+//             </div>
+//             <div class="paper-authors">${formatAuthors(paper.authors)}</div>
+//             <div class="paper-summary">${escapeHtml(paper.summary || '无摘要')}</div>
+//             <div class="paper-actions">
+//                 <button class="btn btn-primary" onclick="viewPaper('${escapeHtml(paper.paper_url || '')}')">查看原文</button>
+//                 <button class="btn-read ${isRead ? 'active' : ''}" onclick="toggleReadStatus('${escapeHtml(paper.paper_url || '')}', this)" title="标记为已读">
+//                     ✓
+//                 </button>
+//                 <button class="btn-favorite ${isFavorite ? 'active' : ''}" onclick="toggleFavoriteStatus('${escapeHtml(paper.paper_url || '')}', this)" title="添加到收藏">
+//                     ${isFavorite ? '♥' : '♡'}
+//                 </button>
+//                 <button class="btn btn-outline" onclick="showCustomTagsSelector('${escapeHtml(paper.paper_url || '')}')" title="添加自定义标签">
+//                   标签
+//                 </button>
+//                 ${formatCategoriesWithCustom(paper)}
+//             </div>
+//         </div>`;
+//     }).join('');
+//
+//     container.innerHTML = papersHTML;
+//
+//     // 使用 Intersection Observer 实现无限滚动
+//     if (papers.length > 4) {
+//         const loadMoreDiv = document.createElement('div');
+//         loadMoreDiv.id = 'load-more';
+//         loadMoreDiv.textContent = '加载更多...';
+//         loadMoreDiv.style.textAlign = 'center';
+//         loadMoreDiv.style.padding = '20px';
+//         container.appendChild(loadMoreDiv);
+//
+//         // 添加滚动事件监听
+//         setupInfiniteScroll(papers, 50);
+//     }
+// }
+
+// 在 renderPapers 函数中确保正确设置 paperCustomTags
 function renderPapers(papers) {
     const container = document.getElementById('papersContainer');
     const countElement = document.getElementById('paperCount');
 
     if (papers.length === 0) {
-        container.innerHTML = `                    <div class="empty-state">
+        container.innerHTML = `<div class="empty-state">
                 <h3>未找到匹配的论文</h3>
                 <p>请尝试调整搜索条件或筛选器</p>
-            </div>
-        `;
+            </div>`;
         countElement.textContent = '0';
         return;
     }
 
     countElement.textContent = papers.length;
 
-    const papersHTML = papers.map(paper => {
-        const isRead = readPapers.includes(paper.paper_url);
-        const isFavorite = favoritePapers.includes(paper.paper_url);
+    // 只渲染前50个元素，提高初始加载速度
+    const visiblePapers = papers.slice(0, 50);
+    const papersHTML = visiblePapers.map(paper => {
+        const isRead = paper.is_read || false;
+        const isFavorite = paper.is_favorite || false;
+        // 确保这里正确缓存自定义标签数据
+        paperCustomTags[paper.paper_url] = paper.custom_tags || [];
 
-        return `                <div class="paper-card ${isRead ? 'read' : ''} ${isFavorite ? 'favorite' : ''}" id="paper-${escapeHtml(paper.paper_url || '')}">
+        return `<div class="paper-card ${isRead ? 'read' : ''} ${isFavorite ? 'favorite' : ''}" id="paper-${escapeHtml(paper.paper_url || '')}">
             <div class="paper-header">
                 <h2 class="paper-title">${escapeHtml(paper.title || '无标题')}</h2>
                 <div class="paper-date">${formatDate(paper.published)}</div>
@@ -92,28 +157,89 @@ function renderPapers(papers) {
                     ✓
                 </button>
                 <button class="btn-favorite ${isFavorite ? 'active' : ''}" onclick="toggleFavoriteStatus('${escapeHtml(paper.paper_url || '')}', this)" title="添加到收藏">
-                    ♡
+                    ${isFavorite ? '♥' : '♡'}
                 </button>
                 <button class="btn btn-outline" onclick="showCustomTagsSelector('${escapeHtml(paper.paper_url || '')}')" title="添加自定义标签">
                   标签
                 </button>
-                ${formatCategoriesWithCustom(paper)}                    </div>
-        </div>
-    `}).join('');
+                ${formatCategoriesWithCustom(paper)}
+            </div>
+        </div>`;
+    }).join('');
 
     container.innerHTML = papersHTML;
+
+    // 使用 Intersection Observer 实现无限滚动
+    if (papers.length > 50) {
+        const loadMoreDiv = document.createElement('div');
+        loadMoreDiv.id = 'load-more';
+        loadMoreDiv.textContent = '加载更多...';
+        loadMoreDiv.style.textAlign = 'center';
+        loadMoreDiv.style.padding = '20px';
+        container.appendChild(loadMoreDiv);
+
+        // 添加滚动事件监听
+        setupInfiniteScroll(papers, 50);
+    }
 }
+
+
+// 渲染论文列表
+// function renderPapers(papers) {
+//     const container = document.getElementById('papersContainer');
+//     const countElement = document.getElementById('paperCount');
+//
+//     if (papers.length === 0) {
+//         container.innerHTML = `                    <div class="empty-state">
+//                 <h3>未找到匹配的论文</h3>
+//                 <p>请尝试调整搜索条件或筛选器</p>
+//             </div>
+//         `;
+//         countElement.textContent = '0';
+//         return;
+//     }
+//
+//     countElement.textContent = papers.length;
+//
+//     const papersHTML = papers.map(paper => {
+//         const isRead = paper.is_read || false;
+//         const isFavorite = paper.is_favorite || false;
+//         paperCustomTags[paper.paper_url] = paper.custom_tags || [];
+//
+//         return `<div class="paper-card ${isRead ? 'read' : ''} ${isFavorite ? 'favorite' : ''}" id="paper-${escapeHtml(paper.paper_url || '')}">
+//             <div class="paper-header">
+//                 <h2 class="paper-title">${escapeHtml(paper.title || '无标题')}</h2>
+//                 <div class="paper-date">${formatDate(paper.published)}</div>
+//             </div>
+//             <div class="paper-authors">${formatAuthors(paper.authors)}</div>
+//             <div class="paper-summary">${escapeHtml(paper.summary || '无摘要')}</div>
+//             <div class="paper-actions">
+//                 <button class="btn btn-primary" onclick="viewPaper('${escapeHtml(paper.paper_url || '')}')">查看原文</button>
+//                 <button class="btn-read ${isRead ? 'active' : ''}" onclick="toggleReadStatus('${escapeHtml(paper.paper_url || '')}', this)" title="标记为已读">
+//                     ✓
+//                 </button>
+//                 <button class="btn-favorite ${isFavorite ? 'active' : ''}" onclick="toggleFavoriteStatus('${escapeHtml(paper.paper_url || '')}', this)" title="添加到收藏">
+//                     ${isFavorite ? '♥' : '♡'}                </button>
+//                 <button class="btn btn-outline" onclick="showCustomTagsSelector('${escapeHtml(paper.paper_url || '')}')" title="添加自定义标签">
+//                   标签
+//                 </button>
+//                 ${formatCategoriesWithCustom(paper)}            </div>
+//         </div>`;
+//     }).join('');
+//
+//     container.innerHTML = papersHTML;
+// }
 
 // 在页面加载时预加载所有论文的自定义标签
-async function preloadPaperTags(papers) {
-    // 为提高性能，可以只加载前几篇论文的标签
-    const promises = papers.slice(0, 10).map(async paper => {
-        const tags = await loadPaperCustomTags(paper.paper_url);
-        paperCustomTags[paper.paper_url] = tags;
-    });
-
-    await Promise.all(promises);
-}
+// async function preloadPaperTags(papers) {
+//     // 为提高性能，可以只加载前几篇论文的标签
+//     const promises = papers.slice(0, 10).map(async paper => {
+//         const tags = await loadPaperCustomTags(paper.paper_url);
+//         paperCustomTags[paper.paper_url] = tags;
+//     });
+//
+//     await Promise.all(promises);
+// }
 
 // 向服务器发送收藏状态
 async function saveFavoriteStatusToServer(paperId, isFavorite) {
@@ -292,20 +418,22 @@ async function loadCustomTags() {
 let paperCustomTags = {}; // {paperId: [tagIds]}
 
 // 从服务器获取论文的自定义标签
-async function loadPaperCustomTags(paperId) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/tags/load?paper_id=${paperId}`);
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                return data.data || [];
-            }
-        }
-    } catch (error) {
-        console.error('加载论文自定义标签失败:', error);
-    }
-    return [];
-}
+// async function loadPaperCustomTags(paperId) {
+//     console.log('正在调用 loadPaperCustomTags，paperId:', paperId);
+//     console.trace('调用堆栈:');
+//     try {
+//         const response = await fetch(`${API_BASE_URL}/tags/load?paper_id=${paperId}`);
+//         if (response.ok) {
+//             const data = await response.json();
+//             if (data.success) {
+//                 return data.data || [];
+//             }
+//         }
+//     } catch (error) {
+//         console.error('加载论文自定义标签失败:', error);
+//     }
+//     return [];
+// }
 
 // 修改 renderPapers 函数，在格式化分类标签部分添加自定义标签显示
 // function formatCategoriesWithCustom(paper) {
@@ -580,55 +708,75 @@ function updatePaperCardTagsDisplay(paperId) {
     }
 }
 
-
+// 简化 formatCategoriesWithCustom 函数
 function formatCategoriesWithCustom(paper) {
     let categoriesHTML = formatCategories(paper.categories);
 
     // 获取该论文的自定义标签
     const customTagsForPaper = paperCustomTags[paper.paper_url] || [];
 
-    // 添加可删除的自定义标签显示
+    // 使用更简单的标签样式
+    // 使用内联样式确保颜色显示
     if (customTagsForPaper.length > 0) {
-        const customTagsHTML = customTagsForPaper.map(tag => `            <span class="custom-tag-wrapper" style="display: inline-block; position: relative; margin: 2px 4px;">
-                <span class="custom-tag" style="
-                    display: inline-block;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 4px 12px 4px 12px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: 500;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    transition: all 0.3s ease;
-                    cursor: pointer;
-                    position: relative;
-                " onclick="toggleTagDeleteButton(this, '${escapeHtml(paper.paper_url)}', ${tag.id})" 
-                   onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';" 
-                   onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
-                    ${escapeHtml(tag.name)}                </span>
-                <span class="delete-tag" style="
-                    display: none;
-                    position: absolute;
-                    top: -6px;
-                    right: -4px;
-                    background: #ff4757;
-                    color: white;
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 50%;
-                    font-size: 10px;
-                    text-align: center;
-                    line-height: 16px;
-                    cursor: pointer;
-                    font-weight: bold;
-                " onclick="deletePaperTag('${escapeHtml(paper.paper_url)}', ${tag.id}, '${escapeHtml(tag.name)}', event)">×</span>
-            </span>
-        `).join('');
+        const customTagsHTML = customTagsForPaper.map(tag =>
+            `<span class="category-tag" style="background-color: #e8f5e9; color: #388e3c; border: 1px solid #c8e6c9; margin: 2px;">
+                ${escapeHtml(tag)}            </span>`
+        ).join('');
         categoriesHTML += customTagsHTML;
     }
 
     return categoriesHTML;
 }
+
+
+// function formatCategoriesWithCustom(paper) {
+//     let categoriesHTML = formatCategories(paper.categories);
+//
+//     // 获取该论文的自定义标签
+//     const customTagsForPaper = paperCustomTags[paper.paper_url] || [];
+//
+//     // 添加可删除的自定义标签显示
+//     if (customTagsForPaper.length > 0) {
+//         const customTagsHTML = customTagsForPaper.map(tag => `            <span class="custom-tag-wrapper" style="display: inline-block; position: relative; margin: 2px 4px;">
+//                 <span class="custom-tag" style="
+//                     display: inline-block;
+//                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+//                     color: white;
+//                     padding: 4px 12px 4px 12px;
+//                     border-radius: 20px;
+//                     font-size: 12px;
+//                     font-weight: 500;
+//                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+//                     transition: all 0.3s ease;
+//                     cursor: pointer;
+//                     position: relative;
+//                 " onclick="toggleTagDeleteButton(this, '${escapeHtml(paper.paper_url)}', ${tag.id})"
+//                    onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';"
+//                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
+//                     ${escapeHtml(tag.name)}                </span>
+//                 <span class="delete-tag" style="
+//                     display: none;
+//                     position: absolute;
+//                     top: -6px;
+//                     right: -4px;
+//                     background: #ff4757;
+//                     color: white;
+//                     width: 16px;
+//                     height: 16px;
+//                     border-radius: 50%;
+//                     font-size: 10px;
+//                     text-align: center;
+//                     line-height: 16px;
+//                     cursor: pointer;
+//                     font-weight: bold;
+//                 " onclick="deletePaperTag('${escapeHtml(paper.paper_url)}', ${tag.id}, '${escapeHtml(tag.name)}', event)">×</span>
+//             </span>
+//         `).join('');
+//         categoriesHTML += customTagsHTML;
+//     }
+//
+//     return categoriesHTML;
+// }
 
 // 渲染自定义标签树形结构
 function renderCustomTagsTree(tags, container, level = 0) {
@@ -742,26 +890,43 @@ async function showCustomTagsSelector(paperId) {
 }
 
 // 更新论文标签缓存
-async function updatePaperTagsCache(paperId, tagId, tagName) {
-    try {
-        // 从服务器重新获取该论文的标签
-        const tags = await loadPaperCustomTags(paperId);
-        paperCustomTags[paperId] = tags;
-    } catch (error) {
-        console.error('更新标签缓存失败:', error);
-        // 如果获取失败，手动添加到缓存
-        if (!paperCustomTags[paperId]) {
-            paperCustomTags[paperId] = [];
-        }
+// async function updatePaperTagsCache(paperId, tagId, tagName) {
+//     try {
+//         // 从服务器重新获取该论文的标签
+//         const tags = await loadPaperCustomTags(paperId);
+//         paperCustomTags[paperId] = tags;
+//     } catch (error) {
+//         console.error('更新标签缓存失败:', error);
+//         // 如果获取失败，手动添加到缓存
+//         if (!paperCustomTags[paperId]) {
+//             paperCustomTags[paperId] = [];
+//         }
+//
+//         // 检查是否已存在该标签
+//         const exists = paperCustomTags[paperId].some(tag => tag.id === tagId);
+//         if (!exists) {
+//             paperCustomTags[paperId].push({
+//                 id: tagId,
+//                 name: tagName
+//             });
+//         }
+//     }
+// }
 
-        // 检查是否已存在该标签
-        const exists = paperCustomTags[paperId].some(tag => tag.id === tagId);
-        if (!exists) {
-            paperCustomTags[paperId].push({
-                id: tagId,
-                name: tagName
-            });
-        }
+// 修改 updatePaperTagsCache 函数，避免重新请求数据
+async function updatePaperTagsCache(paperId, tagId, tagName) {
+    // 直接操作本地缓存，而不是重新从服务器获取
+    if (!paperCustomTags[paperId]) {
+        paperCustomTags[paperId] = [];
+    }
+
+    // 检查是否已存在该标签
+    const exists = paperCustomTags[paperId].some(tag => tag.id === tagId);
+    if (!exists) {
+        paperCustomTags[paperId].push({
+            id: tagId,
+            name: tagName
+        });
     }
 }
 
@@ -882,7 +1047,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// 搜索和筛选功能
+// 修改 filterPapers 函数，移除 preloadPaperTags 调用
 async function filterPapers() {
     const searchTerm = document.getElementById('searchInput').value;
     const categoryFilter = document.getElementById('categoryFilter').value;
@@ -896,8 +1061,7 @@ async function filterPapers() {
 
         const papers = await fetchPapers(params);
 
-        // 预加载论文的自定义标签
-        await preloadPaperTags(papers);
+        // 移除这行：await preloadPaperTags(papers);
 
         // 客户端日期筛选
         let filteredPapers = papers;
@@ -916,14 +1080,56 @@ async function filterPapers() {
 
         renderPapers(filteredPapers);
     } catch (error) {
-        document.getElementById('papersContainer').innerHTML = `                    <div class="error">
+        document.getElementById('papersContainer').innerHTML = `<div class="error">
                 <h3>加载论文数据时出错</h3>
                 <p>${error.message}</p>
                 <button class="btn btn-primary" onclick="location.reload()">重新加载</button>
-            </div>
-        `;
+            </div>`;
     }
 }
+
+// 搜索和筛选功能
+// async function filterPapers() {
+//     const searchTerm = document.getElementById('searchInput').value;
+//     const categoryFilter = document.getElementById('categoryFilter').value;
+//     const dateFilter = document.getElementById('dateFilter').value;
+//
+//     try {
+//         // 构建API参数
+//         const params = {};
+//         if (searchTerm) params.search = searchTerm;
+//         if (categoryFilter) params.category = categoryFilter;
+//
+//         const papers = await fetchPapers(params);
+//
+//         // 预加载论文的自定义标签
+//         // await preloadPaperTags(papers);
+//
+//         // 客户端日期筛选
+//         let filteredPapers = papers;
+//         if (dateFilter) {
+//             filteredPapers = papers.filter(paper =>
+//                 isWithinDays(paper.published, parseInt(dateFilter))
+//             );
+//         }
+//
+//         // 按日期降序排序（确保顺序正确）
+//         filteredPapers.sort((a, b) => {
+//             const dateA = new Date(a.published || 0);
+//             const dateB = new Date(b.published || 0);
+//             return dateB - dateA;
+//         });
+//
+//         renderPapers(filteredPapers);
+//     } catch (error) {
+//         document.getElementById('papersContainer').innerHTML = `                    <div class="error">
+//                 <h3>加载论文数据时出错</h3>
+//                 <p>${error.message}</p>
+//                 <button class="btn btn-primary" onclick="location.reload()">重新加载</button>
+//             </div>
+//         `;
+//     }
+// }
 
 // 检查日期是否在指定天数内
 function isWithinDays(dateString, days) {
@@ -960,15 +1166,54 @@ function viewPaper(paperUrl) {
 }
 
 // 初始化页面
+// document.addEventListener('DOMContentLoaded', async () => {
+//     await loadUserPreferences();
+//     // 初始加载数据
+//     filterPapers();
+//
+//     // 添加事件监听器
+//     document.getElementById('searchInput').addEventListener('input', filterPapers);
+//     document.getElementById('categoryFilter').addEventListener('change', filterPapers);
+//     document.getElementById('dateFilter').addEventListener('change', filterPapers);
+// });
+
+// 在页面初始化时添加事件委托
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadUserPreferences();
-    // 初始加载数据
+    // await loadUserPreferences();
     filterPapers();
 
     // 添加事件监听器
     document.getElementById('searchInput').addEventListener('input', filterPapers);
     document.getElementById('categoryFilter').addEventListener('change', filterPapers);
     document.getElementById('dateFilter').addEventListener('change', filterPapers);
+
+    // 使用事件委托处理动态元素
+    document.getElementById('papersContainer').addEventListener('click', function(e) {
+        // 处理已读按钮点击
+        if (e.target.classList.contains('btn-read')) {
+            const paperId = e.target.closest('.paper-card').id.replace('paper-', '');
+            toggleReadStatus(paperId, e.target);
+        }
+
+        // 处理收藏按钮点击
+        if (e.target.classList.contains('btn-favorite')) {
+            const paperId = e.target.closest('.paper-card').id.replace('paper-', '');
+            toggleFavoriteStatus(paperId, e.target);
+        }
+
+        // 处理标签按钮点击
+        if (e.target.classList.contains('btn-outline')) {
+            const paperId = e.target.closest('.paper-card').id.replace('paper-', '');
+            showCustomTagsSelector(paperId);
+        }
+
+        // 处理自定义标签点击
+        if (e.target.classList.contains('simple-custom-tag')) {
+            const paperId = e.target.dataset.paperId;
+            const tagId = e.target.dataset.tagId;
+            // 处理标签点击事件
+        }
+    });
 });
 
 
