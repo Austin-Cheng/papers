@@ -1,0 +1,118 @@
+"id","title","title_ch","authors","published","summary","summary_ch","categories","filepath","read","favorite","fulltext_ch"
+http://arxiv.org/abs/2510.23606v1,Variational Masked Diffusion Models,变分掩码扩散模型,"[""Yichi Zhang"", ""Alex Schwing"", ""Zhizhen Zhao""]","2025-10-27 17:59:57","Masked diffusion models have recently emerged as a flexible framework for
+discrete generative modeling. However, a key limitation of standard masked
+diffusion is its inability to effectively capture dependencies among tokens
+that are predicted concurrently, leading to degraded generation quality when
+dependencies among tokens are important. To explicitly model dependencies among
+tokens, we propose Variational Masked Diffusion (VMD), a framework that
+introduces latent variables into the masked diffusion process. Through
+controlled experiments on synthetic datasets, we demonstrate that VMD
+successfully learns dependencies that conventional masked diffusion fails to
+capture. We further validate the effectiveness of our approach on Sudoku
+puzzles and text datasets, where learning of dependencies among tokens improves
+global consistency. Across these domains, VMD enhances both generation quality
+and dependency awareness, highlighting the value of integrating variational
+inference into masked diffusion. Our code is available at:
+https://riccizz.github.io/VMD.",近年来，掩码扩散模型已成为一种灵活的离散生成建模框架。然而，标准掩码扩散方法的一个关键局限在于，它无法有效捕捉同时预测的各个标记之间的依赖关系，这导致在标记间依赖关系至关重要的场景中，生成质量会明显下降。为更明确地建模标记间的依赖关系，我们提出了变分掩码扩散（VMD）框架，在掩码扩散过程中引入了隐变量。通过在合成数据集上的可控实验，我们证明，VMD能够成功学习到传统掩码扩散难以捕捉的依赖关系。此外，我们还在数独谜题和文本数据集上进一步验证了该方法的有效性：在这些任务中，对标记间依赖关系的学习显著提升了全局一致性。总体而言，VMD不仅提高了生成质量，还增强了对依赖关系的感知能力，充分体现了将变分推断融入掩码扩散方法的价值。我们的代码已公开，地址如下：https://riccizz.github.io/VMD。,"[""cs.LG"", ""cs.AI"", ""cs.CL""]",Variational Masked Diffusion Models_Zhang_Schwing.pdf,0,0,hahaha
+http://arxiv.org/abs/2510.23605v1,"Track, Inpaint, Resplat: Subject-driven 3D and 4D Generation with Progressive Texture Infilling",追踪、修复、重绘：基于主体的3D与4D生成，结合渐进式纹理填充,"[""Shuhong Zheng"", ""Ashkan Mirzaei"", ""Igor Gilitschenski""]","2025-10-27 17:59:51","Current 3D/4D generation methods are usually optimized for photorealism,
+efficiency, and aesthetics. However, they often fail to preserve the semantic
+identity of the subject across different viewpoints. Adapting generation
+methods with one or few images of a specific subject (also known as
+Personalization or Subject-driven generation) allows generating visual content
+that align with the identity of the subject. However, personalized 3D/4D
+generation is still largely underexplored. In this work, we introduce TIRE
+(Track, Inpaint, REsplat), a novel method for subject-driven 3D/4D generation.
+It takes an initial 3D asset produced by an existing 3D generative model as
+input and uses video tracking to identify the regions that need to be modified.
+Then, we adopt a subject-driven 2D inpainting model for progressively infilling
+the identified regions. Finally, we resplat the modified 2D multi-view
+observations back to 3D while still maintaining consistency. Extensive
+experiments demonstrate that our approach significantly improves identity
+preservation in 3D/4D generation compared to state-of-the-art methods. Our
+project website is available at
+https://zsh2000.github.io/track-inpaint-resplat.github.io/.",当前的3D/4D生成方法通常针对照片级真实感、效率和美学进行了优化，但它们往往难以在不同视角下保持主体的语义一致性。通过利用特定主体的一两张图像来调整生成方法（也称为个性化或主体驱动型生成），能够生成更贴合主体特征的视觉内容。然而，个性化3D/4D生成技术目前仍处于探索阶段，尚未得到充分开发。为此，我们提出了一种名为TIRE（追踪、修复、重绘）的创新方法，用于实现主体驱动的3D/4D生成。该方法以现有3D生成模型生成的初始3D资产作为输入，结合视频追踪技术精准定位需要修改的区域；随后，我们引入一种基于主体的2D修复模型，逐步填充这些识别出的区域；最后，我们将经过修改的2D多视角观察结果重新映射回3D空间，同时确保整体的一致性。大量实验表明，与当前最先进的方法相比，我们的方案显著提升了3D/4D生成过程中对主体身份的保留能力。我们的项目网站已上线，地址为：https://zsh2000.github.io/track-inpaint-resplat.github.io/。,"[""cs.CV"", ""cs.AI"", ""cs.GR"", ""cs.LG"", ""cs.RO""]","Track, Inpaint, Resplat  Subject-driven 3D and 4D _Zheng_Mirzaei.pdf",0,0,hahaha
+http://arxiv.org/abs/2510.23601v1,Alita-G: Self-Evolving Generative Agent for Agent Generation,阿丽塔-G：用于代理生成的自进化生成式智能体,"[""Jiahao Qiu"", ""Xuan Qi"", ""Hongru Wang"", ""Xinzhe Juan"", ""Yimin Wang"", ""Zelin Zhao"", ""Jiayi Geng"", ""Jiacheng Guo"", ""Peihang Li"", ""Jingzhe Shi"", ""Shilong Liu"", ""Mengdi Wang""]","2025-10-27 17:59:14","Large language models (LLMs) have been shown to perform better when
+scaffolded into agents with memory, tools, and feedback. Beyond this,
+self-evolving agents have emerged, but current work largely limits adaptation
+to prompt rewriting or failure retries. Therefore, we present ALITA-G, a
+self-evolution framework that transforms a general-purpose agent into a domain
+expert by systematically generating, abstracting, and curating Model Context
+Protocol (MCP) tools. In this framework, a generalist agent executes a curated
+suite of target-domain tasks and synthesizes candidate MCPs from successful
+trajectories. These are then abstracted to parameterized primitives and
+consolidated into an MCP Box. At inference time, ALITA-G performs
+retrieval-augmented MCP selection with the help of each tool's descriptions and
+use cases, before executing an agent equipped with the MCP Executor. Across
+several benchmarks GAIA, PathVQA, and Humanity's Last Exam, ALITA-G attains
+strong gains while reducing computation costs. On GAIA validation, it achieves
+83.03% pass@1 and 89.09% pass@3, establishing a new state-of-the-art result
+while reducing mean tokens per example by approximately 15% relative to a
+strong baseline agent. ALITA-G thus provides a principled pathway from
+generalist capability to reusable, domain-specific competence, improving both
+accuracy and efficiency on complex reasoning tasks.",研究表明，大型语言模型（LLMs）在被构建成具备记忆、工具和反馈机制的智能体时，表现更为出色。此外，自进化智能体已崭露头角，但目前的研究大多局限于通过重写提示或反复尝试来实现适应性调整。为此，我们提出了ALITA-G框架，该框架能够系统化地生成、抽象并精心筛选模型上下文协议（MCP）工具，从而将通用型智能体转化为特定领域的专家级助手。在这一框架中，通用型智能体首先执行一系列经过精心设计的目标领域任务，并从成功完成的任务轨迹中提炼出候选的MCP工具。随后，这些工具被进一步抽象为参数化的基础模块，并整合进一个MCP工具箱中。在推理阶段，ALITA-G会借助每种工具的描述与应用场景，结合检索增强技术，精准选择合适的MCP工具；最后，配备MCP执行器的智能体将正式展开任务执行。在GAIA、PathVQA和“人类终极考试”等多个基准测试中，ALITA-G不仅显著提升了性能，还有效降低了计算成本。特别是在GAIA验证任务上，ALITA-G的通过率分别达到了83.03%（1次通过）和89.09%（3次通过），刷新了当前最佳纪录；同时，相比强大的基线智能体，它还将每个示例所需的平均Token数量减少了约15%。由此可见，ALITA-G为从通用能力迈向可复用、高度专业化的领域专长提供了清晰而高效的技术路径，显著提升了复杂推理任务的准确性和效率。,"[""cs.AI""]",Alita-G  Self-Evolving Generative Agent for Agent _Qiu_Qi.pdf,0,0,hahaha
+http://arxiv.org/abs/2510.27688v1,Continuous Autoregressive Language Models,连续自回归语言模型,"[""Chenze Shao"", ""Darren Li"", ""Fandong Meng"", ""Jie Zhou""]","2025-10-31 17:58:11","The efficiency of large language models (LLMs) is fundamentally limited by
+their sequential, token-by-token generation process. We argue that overcoming
+this bottleneck requires a new design axis for LLM scaling: increasing the
+semantic bandwidth of each generative step. To this end, we introduce
+Continuous Autoregressive Language Models (CALM), a paradigm shift from
+discrete next-token prediction to continuous next-vector prediction. CALM uses
+a high-fidelity autoencoder to compress a chunk of K tokens into a single
+continuous vector, from which the original tokens can be reconstructed with
+over 99.9\% accuracy. This allows us to model language as a sequence of
+continuous vectors instead of discrete tokens, which reduces the number of
+generative steps by a factor of K. The paradigm shift necessitates a new
+modeling toolkit; therefore, we develop a comprehensive likelihood-free
+framework that enables robust training, evaluation, and controllable sampling
+in the continuous domain. Experiments show that CALM significantly improves the
+performance-compute trade-off, achieving the performance of strong discrete
+baselines at a significantly lower computational cost. More importantly, these
+findings establish next-vector prediction as a powerful and scalable pathway
+towards ultra-efficient language models. Code:
+https://github.com/shaochenze/calm. Project:
+https://shaochenze.github.io/blog/2025/CALM.","大型语言模型（LLMs）的效率从根本上受限于其逐 token 顺序生成的过程。我们认为，要突破这一瓶颈，必须为 LLM 的扩展引入一种全新的设计维度：即提升每一步生成过程中的语义带宽。为此，我们提出了连续自回归语言模型（CALM），这是一种从离散的下一个 token 预测向连续的下一个向量预测范式的重大转变。CALM 采用高保真度的自编码器，将 K 个 token 组合压缩成一个单一的连续向量，而原始 token 则能以超过 99.9% 的精度从该向量中重建。这使得我们能够将语言建模为连续向量序列，而非离散 token 序列，从而将生成步骤的数量大幅减少 K 倍。然而，这种范式转变也要求我们开发一套全新的建模工具链；因此，我们构建了一个全面的无似然框架，支持在连续域中进行稳健的训练、评估以及可控采样。实验表明，CALM 显著提升了性能与计算成本之间的平衡，在显著降低计算开销的同时，达到了强大离散基线模型的性能水平。更重要的是，这些发现确立了下一个向量预测作为一条高效且可扩展的路径，助力打造超高效的语言模型。  
+代码：  
+https://github.com/shaochenze/calm  
+项目：  
+https://shaochenze.github.io/blog/2025/CALM","[""cs.CL"", ""cs.AI"", ""cs.LG""]",Continuous Autoregressive Language Models_Shao_Li.pdf,0,0,hahaha
+http://arxiv.org/abs/2510.27680v1,PETAR: Localized Findings Generation with Mask-Aware Vision-Language Modeling for PET Automated Reporting,PETAR：基于掩码感知视觉-语言建模的PET自动报告局部病灶生成方法,"[""Danyal Maqbool"", ""Changhee Lee"", ""Zachary Huemann"", ""Samuel D. Church"", ""Matthew E. Larson"", ""Scott B. Perlman"", ""Tomas A. Romero"", ""Joshua D. Warner"", ""Meghan Lubner"", ""Xin Tie"", ""Jameson Merkow"", ""Junjie Hu"", ""Steve Y. Cho"", ""Tyler J. Bradshaw""]","2025-10-31 17:49:01","Recent advances in vision-language models (VLMs) have enabled impressive
+multimodal reasoning, yet most medical applications remain limited to 2D
+imaging. In this work, we extend VLMs to 3D positron emission tomography and
+computed tomography (PET/CT), a domain characterized by large volumetric data,
+small and dispersed lesions, and lengthy radiology reports. We introduce a
+large-scale dataset comprising over 11,000 lesion-level descriptions paired
+with 3D segmentations from more than 5,000 PET/CT exams, extracted via a hybrid
+rule-based and large language model (LLM) pipeline. Building upon this dataset,
+we propose PETAR-4B, a 3D mask-aware vision-language model that integrates PET,
+CT, and lesion contours for spatially grounded report generation. PETAR bridges
+global contextual reasoning with fine-grained lesion awareness, producing
+clinically coherent and localized findings. Comprehensive automated and human
+evaluations demonstrate that PETAR substantially improves PET/CT report
+generation quality, advancing 3D medical vision-language understanding.","近年来，视觉-语言模型（VLMs）的快速发展推动了令人瞩目的多模态推理能力，但目前大多数医疗应用仍局限于二维影像分析。在本研究中，我们将VLMs扩展至三维正电子发射断层扫描与计算机断层扫描（PET/CT）领域——这一领域以海量体积数据、微小且分散的病灶，以及冗长的放射学报告为典型特征。我们首次构建了一个大规模数据集，包含超过11,000个病灶级描述，并配套5,000多例PET/CT检查的三维分割信息，这些数据通过规则驱动与大型语言模型（LLM）相结合的混合流程提取而来。基于此数据集，我们提出了PETAR-4B——一种具备3D掩码感知能力的视觉-语言模型，能够融合PET、CT及病灶轮廓信息，实现空间精准的报告生成。PETAR成功地将全局上下文推理与精细的病灶识别能力相统一，从而生成既符合临床逻辑又高度局部化的诊断结论。经全面的自动化评估和人工评测表明，PETAR显著提升了PET/CT报告的生成质量，推动了三维医学视觉-语言理解领域的跨越式发展。","[""cs.CV"", ""cs.AI"", ""cs.LG""]",PETAR  Localized Findings Generation with Mask-Awa_Maqbool_Lee.pdf,0,0,hahaha
+http://arxiv.org/abs/2510.27671v1,MolChord: Structure-Sequence Alignment for Protein-Guided Drug Design,MolChord：基于蛋白质指导的药物设计结构-序列比对方法,"[""Wei Zhang"", ""Zekun Guo"", ""Yingce Xia"", ""Peiran Jin"", ""Shufang Xie"", ""Tao Qin"", ""Xiang-Yang Li""]","2025-10-31 17:35:53","Structure-based drug design (SBDD), which maps target proteins to candidate
+molecular ligands, is a fundamental task in drug discovery. Effectively
+aligning protein structural representations with molecular representations, and
+ensuring alignment between generated drugs and their pharmacological
+properties, remains a critical challenge. To address these challenges, we
+propose MolChord, which integrates two key techniques: (1) to align protein and
+molecule structures with their textual descriptions and sequential
+representations (e.g., FASTA for proteins and SMILES for molecules), we
+leverage NatureLM, an autoregressive model unifying text, small molecules, and
+proteins, as the molecule generator, alongside a diffusion-based structure
+encoder; and (2) to guide molecules toward desired properties, we curate a
+property-aware dataset by integrating preference data and refine the alignment
+process using Direct Preference Optimization (DPO). Experimental results on
+CrossDocked2020 demonstrate that our approach achieves state-of-the-art
+performance on key evaluation metrics, highlighting its potential as a
+practical tool for SBDD.",基于结构的药物设计（SBDD）是药物发现中的核心任务，其核心在于将靶标蛋白与候选分子配体进行匹配。然而，如何高效地将蛋白质的结构表示与分子表示对齐，并确保生成的药物与其药理特性精准契合，仍是一项亟待解决的关键挑战。为此，我们提出MolChord方法，该方法整合了两项关键技术：（1）为实现蛋白质和分子结构与其文本描述及序列化表示（如用于蛋白质的FASTA格式和用于分子的SMILES格式）之间的精确对齐，我们创新性地引入了NatureLM模型——一种融合了文本、小分子和蛋白质的自回归模型，作为分子生成器，并结合基于扩散的结构编码器；（2）为了引导分子向预期的药理特性优化，我们精心构建了一个兼顾属性信息的数据集，整合了偏好数据，并采用直接偏好优化（DPO）方法进一步优化对齐过程。实验结果表明，MolChord在CrossDocked2020数据集上的关键评估指标上均达到了当前最先进水平，充分展现了其作为SBDD实用工具的巨大潜力。,"[""cs.AI"", ""cs.LG""]",MolChord  Structure-Sequence Alignment for Protein_Zhang_Guo.pdf,0,0,hahaha
+https://zhuanlan.zhihu.com/p/1896638376834208782,Cross Encoder,Cross Encoder,"[""知乎-pointerL""]","2025-11-07 17:59:57",,,"[""公众号""]",,1,1,
+https://mp.weixin.qq.com/s/yMCgtiV1SGapUP3yedEaPQ?scene=1,RAG系统的检索排序要怎么优化？,RAG系统的检索排序要怎么优化？,"[""公众号-吴师兄学大模型""]","2025-11-07 17:59:57",,,"[""知乎""]",,1,1,
+https://blog.csdn.net/keeppractice/article/details/148949577,Bi-Encoder 与 Cross-Encoder 全解析：原理、对比与实战模型推荐,Bi-Encoder 与 Cross-Encoder 全解析：原理、对比与实战模型推荐,"[""CSDN-茫茫人海一粒沙""]","2025-11-07 17:59:57",,,"[""CSDN""]",,1,1,
+https://mp.weixin.qq.com/s/JmY8sJGXo-8bF6P28Du7eg?scene=1,超越 CoT：ReAct 框架如何将 LLM 转化为具备长期记忆和规划能力的自主智能体,超越 CoT：ReAct 框架如何将 LLM 转化为具备长期记忆和规划能力的自主智能体,"[""公众号-AI炼金坊""]","2025-11-10 07:59:57",,,"[""公众号""]",,1,0,
+https://mp.weixin.qq.com/s/skajIQO1OFyQy99sRnbj5A?scene=1&click_id=6,RAG有哪些优化手段？,RAG有哪些优化手段？,"[""公众号-吴师兄学大模型""]","2025-11-10 07:59:57",,,"[""公众号""]",,1,0,
+https://mp.weixin.qq.com/s/yiE8GJCmuxaxGNxSBGKrZw?scene=1&click_id=8,ReAct范式深度解析：从理论到LangGraph实践,ReAct范式深度解析：从理论到LangGraph实践,"[""公众号-阿里云开发者""]","2025-11-10 07:59:57",,,"[""公众号""]",,0,0,
+https://huggingface.co/spaces/mteb/leaderboard,MTEB榜单,MTEB榜单,"[""HuggingFace""]","2200-11-10 07:59:57",,,"[""HuggingFace""]",,0,0,
+https://arxiv.org/abs/2205.12035,RetroMAE: Pre-Training Retrieval-oriented Language Models Via Masked Auto-Encoder,RetroMAE: Pre-Training Retrieval-oriented Language Models Via Masked Auto-Encoder,"[""Shitao Xiao"", ""Zheng Liu"", ""Yingxia Shao"", ""Zhao Cao""]","2022-05-24 00:00:00",,,"[""cs.CL""]",,0,0,
+https://zhuanlan.zhihu.com/p/659682364,Sentence-Bert,Sentence-Bert,"[""Cheer-ego""]","2019-05-24 00:00:00",,,"[""知乎""]",,0,0,
+https://zhuanlan.zhihu.com/p/369075953,SimCSE,SimCSE,"[""宋原青""]","2021-05-24 00:00:00",,,"[""知乎""]",,0,0,
+https://blog.csdn.net/keeppractice/article/details/149881818,BGE,BGE,"[""茫茫人海一粒沙""]","2023-05-24 00:00:00",,,"[""CSDN""]",,0,0,
+https://zhuanlan.zhihu.com/p/19932985494,DeepSeek,DeepSeek,"[""Zoe Lee""]","2025-05-24 00:00:00",,,"[""知乎""]",,0,0,
