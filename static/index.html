@@ -1,3 +1,4 @@
+<!-- #file:C:\Users\12390\Documents\projects\papers\static\index.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -18,12 +19,7 @@
             </div>
             <div class="filters">
                 <select id="categoryFilter">
-                    <option value="">所有分类</option>
-                    <option value="cs.AI">人工智能 (cs.AI)</option>
-                    <option value="cs.CV">计算机视觉 (cs.CV)</option>
-                    <option value="cs.CL">计算语言学 (cs.CL)</option>
-                    <option value="cs.GR">计算机图形学 (cs.GR)</option>
-                    <option value="cs.HC">人机交互 (cs.HC)</option>
+                    <option value="">全部标签</option>
                 </select>
                 <select id="dateFilter">
                     <option value="">所有时间</option>
@@ -31,12 +27,24 @@
                     <option value="30">最近30天</option>
                     <option value="90">最近3个月</option>
                 </select>
+                <!-- 添加标签过滤按钮 -->
+                <button id="tagFilterButton" class="btn btn-outline">标签过滤</button>
             </div>
             <div class="paper-count">共 <span id="paperCount">0</span> 篇论文</div>
         </div>
 
         <div id="papersContainer">
             <div class="loading">正在加载论文数据...</div>
+        </div>
+    </div>
+    <!-- 添加标签提示框 -->
+    <div id="tagTooltip" class="tag-tooltip" style="display: none;">
+        <div class="tag-tooltip-content">
+            <div class="tag-tooltip-header">
+                <h3>选择标签进行过滤</h3>
+                <span class="tag-tooltip-close" onclick="hideTagTooltip()">&times;</span>
+            </div>
+            <div id="tagTreeContainer" class="tag-tree-container"></div>
         </div>
     </div>
     <script src="js/script.js"></script>

@@ -10,13 +10,48 @@ import pandas as pd
 import numpy as np
 import math
 
+def find_all_children(df):
+    """计算每个节点的所有孩子节点（直接和间接）"""
+    # 构建父子关系映射
+    parent_to_children = {}
+    id_to_name = dict(zip(df['id'], df['name']))
+
+    # 初始化每个节点的直接孩子
+    for _, row in df.iterrows():
+        parent_id = row['parent_id']
+        child_id = row['id']
+
+        if parent_id not in parent_to_children:
+            parent_to_children[parent_id] = []
+        parent_to_children[parent_id].append(child_id)
+
+    # 递归查找所有孩子节点
+    def find_descendants(node_id):
+        """递归查找节点的所有后代节点"""
+        if node_id not in parent_to_children:
+            return []
+
+        descendants = []
+        for child_id in parent_to_children[node_id]:
+            descendants.append(child_id)
+            descendants.extend(find_descendants(child_id))
+
+        return descendants
+
+    # 计算每个节点的所有孩子节点
+    all_children = {}
+    for node_id in df['id']:
+        all_children[node_id] = find_descendants(node_id)
+
+    return all_children, id_to_name
+
 
 class Paper:
     """论文数据模型"""
 
     def __init__(self, title: str, authors: List[str], summary: str, categories: List[str],
                  published: Optional[str] = None, paper_url: Optional[str] = None, is_read: Optional[int] = None,
-                 is_favorite: Optional[int] = None, custom_tags: Optional[list] = None):
+                 is_favorite: Optional[int] = None, custom_tags: Optional[list] = None, custom_tags_ids: Optional[list] = None):
         self.paper_url = paper_url
         self.title = title
         self.authors = authors
@@ -26,6 +61,7 @@ class Paper:
         self.is_read = is_read or False
         self.is_favorite = is_favorite or False
         self.custom_tags = custom_tags or []
+        self.custom_tags_ids = custom_tags_ids or []
 
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典格式"""
@@ -38,9 +74,9 @@ class Paper:
             "published": self.published,
             "is_read": self.is_read,
             "is_favorite": self.is_favorite,
-            "custom_tags": self.custom_tags
+            "custom_tags": self.custom_tags,
+            "custom_tags_ids": self.custom_tags_ids
         }
-
 
 class PaperStorage:
     """论文数据存储（模拟数据库）"""
@@ -61,7 +97,7 @@ class PaperStorage:
         # 从数据库读取数据
         query = """
         WITH paper_tags_agg AS (
-            SELECT pt.paper_id, JSON_ARRAYAGG(t.name) as tag_names
+            SELECT pt.paper_id, JSON_ARRAYAGG(t.name) as tag_names, JSON_ARRAYAGG(t.id) as tag_ids
             FROM paper_tags pt 
             INNER JOIN tags t ON pt.tag_id = t.id
             GROUP BY pt.paper_id
@@ -75,11 +111,13 @@ class PaperStorage:
             p.published, 
             p.`read` as is_read, 
             p.favorite as is_favorite,
-            pt.tag_names as custom_tags
+            pt.tag_names as custom_tags,
+            pt.tag_ids as custom_tags_ids
         FROM papers p
         LEFT JOIN paper_tags_agg pt ON p.id = pt.paper_id;
         """
         df = pd.read_sql(query, engine)
+
         self.papers = []
         for row in df.to_dict(orient="records"):
             sample_paper = Paper(
@@ -87,11 +125,12 @@ class PaperStorage:
                 authors=json.loads(row['authors']),
                 summary=row['summary_ch'],
                 categories=json.loads(row['categories']),
-                published=row['published'].strftime('%Y-%m-%d %H:%M:%S'),
+                published=row['published'],
                 paper_url=row['id'],
                 is_read=row['is_read'],
                 is_favorite=row['is_favorite'],
-                custom_tags=json.loads(row['custom_tags']) if row['custom_tags'] else []
+                custom_tags=json.loads(row['custom_tags']) if row['custom_tags'] else [],
+                custom_tags_ids=json.loads(row['custom_tags_ids']) if row['custom_tags_ids'] else []
             )
             self.papers.append(sample_paper)
         return self.papers
@@ -107,6 +146,18 @@ class PaperStorage:
     def get_papers_by_category(self, category: str) -> List[Paper]:
         """根据分类获取论文"""
         return [paper for paper in self.papers if category in paper.categories]
+
+    def get_papers_by_tag(self, tag: str) -> List[Paper]:
+        connection_string = f"mysql+pymysql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}/{self.db_config['database']}"
+        engine = create_engine(connection_string)
+        query = "select id, name, parent_id from tags"
+        df = pd.read_sql(query, engine)
+        all_children, id_to_name = find_all_children(df)
+        tag_children = set(all_children[int(tag)])
+        tag_children.add(int(tag))
+
+        """根据分类获取论文"""
+        return [paper for paper in self.papers if tag_children.intersection(set(paper.custom_tags_ids))]
 
     def search_papers(self, query: str) -> List[Paper]:
         """搜索论文"""
@@ -244,7 +295,7 @@ class PaperStorage:
 
             # 建立父子关系
             for tag in tags_dict.values():
-                if tag.parent_id is None or tag.parent_id is np.nan or math.isnan(tag.parent_id):
+                if tag.parent_id == 0:
                     root_tags.append(tag)
                 else:
                     parent = tags_dict.get(tag.parent_id)
@@ -330,6 +381,42 @@ class PaperStorage:
             print(f"为论文删除标签失败: {e}")
             return False
 
+    def get_categories(self) -> List[Dict[str, Any]]:
+        """获取所有论文分类"""
+        try:
+            connection_string = f"mysql+pymysql://{self.db_config['user']}:{self.db_config['password']}@{self.db_config['host']}/{self.db_config['database']}"
+            engine = create_engine(connection_string)
+
+            # 查询所有不同的分类
+            query = "SELECT DISTINCT categories FROM papers"
+            df = pd.read_sql(query, engine)
+
+            # 解析分类数据并去重
+            categories = set()
+            for _, row in df.iterrows():
+                if row['categories']:
+                    try:
+                        cats = json.loads(row['categories'])
+                        if isinstance(cats, list):
+                            categories.update(cats)
+                    except json.JSONDecodeError:
+                        # 如果不是JSON格式，直接添加原始值
+                        categories.add(row['categories'])
+
+            # 转换为字典格式
+            result = []
+            for category in sorted(categories):
+                result.append({
+                    "id": category,
+                    "name": category
+                })
+
+            return result
+
+        except Exception as e:
+            print(f"获取分类失败: {e}")
+            return []
+
 
 class Tag:
     def __init__(self, id, name, parent_id=None):
@@ -354,6 +441,29 @@ class BaseHandler(tornado.web.RequestHandler):
         self.finish()
 
 
+class CategoriesHandler(BaseHandler):
+    """分类接口"""
+    def initialize(self, storage: PaperStorage):
+        self.storage = storage
+
+    async def get(self):
+        """获取所有分类"""
+        try:
+            categories = self.storage.get_categories()
+
+            self.write({
+                "success": True,
+                "data": list(categories)
+            })
+
+        except Exception as e:
+            self.set_status(500)
+            self.write({
+                "success": False,
+                "error": str(e)
+            })
+
+
 class PapersHandler(BaseHandler):
     """论文列表接口"""
 
@@ -365,6 +475,7 @@ class PapersHandler(BaseHandler):
         try:
             # 获取查询参数
             category = self.get_argument("category", None)
+            tag_id = self.get_argument("tag_id", None)  # 添加标签过滤参数
             search = self.get_argument("search", None)
             limit = int(self.get_argument("limit", 100))
             offset = int(self.get_argument("offset", 0))
@@ -372,6 +483,8 @@ class PapersHandler(BaseHandler):
             # 获取论文数据
             if category:
                 papers = self.storage.get_papers_by_category(category)
+            elif tag_id:
+                papers = self.storage.get_papers_by_tag(tag_id)
             elif search:
                 papers = self.storage.search_papers(search)
             else:
@@ -842,6 +955,7 @@ def make_app():
         (r"/api/tags/save", PaperTagHandler, {"storage": storage}),
         (r"/api/tags/load", PaperTagsHandler, {"storage": storage}),
         (r"/api/tags/delete", DeletePaperTagHandler, {"storage": storage}),
+        (r"/api/categories", CategoriesHandler, {"storage": storage}),  # 添加分类接口
     ])
 
 
